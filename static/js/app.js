@@ -31,8 +31,31 @@ function registerServiceWorker() {
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("./sw.js")
-      .then((reg) => console.log("SW Registered", reg))
+      .then((reg) => {
+        console.log("SW Registered", reg);
+        // Detectar si hay una actualización esperando
+        reg.onupdatefound = () => {
+          const installingWorker = reg.installing;
+          installingWorker.onstatechange = () => {
+            if (installingWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                console.log('Nueva versión disponible... recargando.');
+                location.reload();
+              }
+            }
+          };
+        };
+      })
       .catch((err) => console.log("SW Error", err));
+    
+    // Forzar recarga si el controlador cambia (activación inmediata)
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        window.location.reload();
+        refreshing = true;
+      }
+    });
   }
 }
 
