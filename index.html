@@ -120,26 +120,42 @@
     <main id="ventas" class="app-section">
       <h3 class="mb-3">Nueva Venta</h3>
       <div class="form-section">
+
+        <!-- Buscador de producto + cantidad -->
         <div class="mb-3">
-          <label>Producto</label>
-          <input
-            type="text"
-            id="venta-search"
-            class="form-control"
-            placeholder="Buscar para agregar..."
-            list="datalist-productos"
-          />
+          <label>Agregar Producto</label>
+          <div class="d-flex gap-2">
+            <input
+              type="text"
+              id="venta-search"
+              class="form-control"
+              placeholder="Buscar y seleccionar..."
+              list="datalist-productos"
+              autocomplete="off"
+            />
+            <input
+              type="number"
+              id="venta-cantidad"
+              class="form-control"
+              value="1"
+              min="1"
+              style="max-width: 75px;"
+              title="Cantidad"
+            />
+          </div>
           <datalist id="datalist-productos"></datalist>
+          <button class="btn btn-outline-primary btn-sm mt-2 w-100" onclick="agregarDesdeBoton()">
+            ➕ Agregar a la venta
+          </button>
         </div>
 
         <div id="venta-items-container" class="mb-3">
-          <!-- Ventas agregadas -->
           <p class="text-muted text-center" id="empty-venta-msg">
             No hay productos en la venta.
           </p>
         </div>
 
-        <div class="d-flex justify-content-between mb-2 fs-5 fw-bold">
+        <div class="d-flex justify-content-between mb-3 fs-5 fw-bold">
           <span>Total:</span>
           <span id="venta-total-monto">$0.00</span>
         </div>
@@ -156,12 +172,26 @@
             <option value="cuenta corriente">Cuenta Corriente</option>
           </select>
         </div>
-        <div class="mb-3" id="venta-cliente-container" style="display: none">
-          <label>Cliente (Para Cuenta Corriente)</label>
+
+        <!-- Cliente: visible siempre, obligatorio solo en CC -->
+        <div class="mb-3">
+          <label id="label-venta-cliente">Cliente <small class="text-muted">(opcional)</small></label>
           <select id="venta-cliente" class="form-control">
-            <option value="">-- Seleccionar --</option>
+            <option value="">-- Sin cliente --</option>
           </select>
         </div>
+
+        <!-- Descripción opcional -->
+        <div class="mb-3">
+          <label>Descripción <small class="text-muted">(opcional: talle, color, etc.)</small></label>
+          <input
+            type="text"
+            id="venta-descripcion"
+            class="form-control"
+            placeholder="Ej: Remera blanca talle M..."
+          />
+        </div>
+
         <button
           class="btn btn-success btn-mobile-full"
           onclick="procesarVenta()"

@@ -418,12 +418,13 @@ let itemsVentaCorriente = [];
 
 function toggleClienteSelect() {
   const metodo = document.getElementById("venta-metodoPago").value;
-  const container = document.getElementById("venta-cliente-container");
-  if (metodo === "cuenta corriente") {
-    container.style.display = "block";
-  } else {
-    container.style.display = "none";
-    document.getElementById("venta-cliente").value = "";
+  const label = document.getElementById("label-venta-cliente");
+  if (label) {
+    if (metodo === "cuenta corriente") {
+      label.innerHTML = 'Cliente <small class="text-danger">(obligatorio)</small>';
+    } else {
+      label.innerHTML = 'Cliente <small class="text-muted">(opcional)</small>';
+    }
   }
 }
 
@@ -458,43 +459,69 @@ async function initVenta() {
 }
 
 function setupEventListeners() {
+  // El input del buscador de productos ya NO agrega automáticamente.
+  // El usuario elige la cantidad y luego presiona el botón "Agregar a la venta".
+  // Esto evita el bug de no poder re-seleccionar un producto.
   const searchInput = document.getElementById("venta-search");
   if (searchInput) {
-    searchInput.addEventListener("change", (e) => {
-      const val = e.target.value;
-      const options = document.getElementById("datalist-productos").options;
-      for (let i = 0; i < options.length; i++) {
-        if (options[i].value === val) {
-          const id = parseInt(options[i].dataset.id);
-          const stock = parseInt(options[i].dataset.stock);
-
-          if (stock <= 0) {
-            alert("¡Sin stock para este producto!");
-            document.getElementById("venta-search").value = "";
-            return;
-          }
-
-          agregarItemVenta(id, val, parseFloat(options[i].dataset.precio));
-          e.target.value = "";
-          break;
-        }
+    // Al perder el foco o pulsar Enter, el datalist ya habrá completado el valor.
+    // El click en el botón agregarDesdeBoton() procesará el valor.
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        agregarDesdeBoton();
       }
     });
   }
 }
 
-function agregarItemVenta(id, nombre, precio) {
+function agregarDesdeBoton() {
+  const searchInput = document.getElementById("venta-search");
+  const cantidadInput = document.getElementById("venta-cantidad");
+  const val = searchInput.value.trim();
+  if (!val) return;
+
+  const cantidad = Math.max(1, parseInt(cantidadInput.value) || 1);
+  const options = document.getElementById("datalist-productos").options;
+
+  for (let i = 0; i < options.length; i++) {
+    if (options[i].value === val) {
+      const id = parseInt(options[i].dataset.id);
+      const stock = parseInt(options[i].dataset.stock);
+
+      if (stock <= 0) {
+        alert("¡Sin stock para este producto!");
+        searchInput.value = "";
+        return;
+      }
+      if (cantidad > stock) {
+        alert(`Solo hay ${stock} unidades disponibles.`);
+        return;
+      }
+
+      agregarItemVenta(id, val, parseFloat(options[i].dataset.precio), cantidad);
+      // Limpiar campos para permitir re-selección
+      searchInput.value = "";
+      cantidadInput.value = "1";
+      return;
+    }
+  }
+
+  alert("Producto no encontrado. Selecciónalo de la lista.");
+}
+
+function agregarItemVenta(id, nombre, precio, cantidad = 1) {
   const existente = itemsVentaCorriente.find((i) => i.producto_id === id);
   if (existente) {
-    existente.cantidad += 1;
+    existente.cantidad += cantidad;
     existente.subtotal = existente.cantidad * existente.precio_unitario;
   } else {
     itemsVentaCorriente.push({
       producto_id: id,
       producto_nombre: nombre,
-      cantidad: 1,
+      cantidad: cantidad,
       precio_unitario: precio,
-      subtotal: precio,
+      subtotal: precio * cantidad,
     });
   }
   renderVentaItems();
@@ -548,6 +575,7 @@ async function procesarVenta() {
 
   const metodo = document.getElementById("venta-metodoPago").value;
   const clienteIdStr = document.getElementById("venta-cliente").value;
+  const descripcion = document.getElementById("venta-descripcion").value.trim();
   const total = itemsVentaCorriente.reduce(
     (acc, curr) => acc + curr.subtotal,
     0,
@@ -556,12 +584,15 @@ async function procesarVenta() {
   let cliente_id = null;
   let cliente_nombre = "";
 
-  if (metodo === "cuenta corriente") {
-    if (!clienteIdStr)
-      return alert("Dees seleccionar un cliente para cuenta corriente.");
+  // Resolver cliente (obligatorio en CC, opcional en efectivo/tarjeta)
+  if (clienteIdStr) {
     cliente_id = parseInt(clienteIdStr);
     const cliObj = await dbGet("clientes", cliente_id);
     if (cliObj) cliente_nombre = cliObj.nombre;
+  }
+
+  if (metodo === "cuenta corriente" && !cliente_id) {
+    return alert("Debes seleccionar un cliente para vender a Cuenta Corriente.");
   }
 
   const dataVenta = {
@@ -569,6 +600,7 @@ async function procesarVenta() {
     cliente_id: cliente_id,
     cliente_nombre: cliente_nombre,
     metodo_pago: metodo,
+    descripcion: descripcion,
     subtotal: total,
     total: total,
     items: itemsVentaCorriente,
@@ -578,19 +610,26 @@ async function procesarVenta() {
     // Guardar venta
     const ventaId = await dbAdd("ventas", dataVenta);
 
-    // Descontar stock de productos
-    const tx = db.transaction(["productos"], "readwrite");
-    const store = tx.objectStore("productos");
-
+    // Descontar stock de productos (Corregido: Esperando a que termine cada operación)
     for (let item of itemsVentaCorriente) {
-      const req = store.get(item.producto_id);
-      req.onsuccess = () => {
-        const prod = req.result;
-        if (prod) {
-          prod.stock = Math.max(0, prod.stock - item.cantidad);
-          store.put(prod);
-        }
-      };
+      await new Promise((resolve, reject) => {
+        const txStock = db.transaction(["productos"], "readwrite");
+        const storeStock = txStock.objectStore("productos");
+        const req = storeStock.get(item.producto_id);
+        
+        req.onsuccess = () => {
+          const prod = req.result;
+          if (prod) {
+            prod.stock = Math.max(0, prod.stock - item.cantidad);
+            const reqUpdate = storeStock.put(prod);
+            reqUpdate.onsuccess = resolve;
+            reqUpdate.onerror = reject;
+          } else {
+            resolve();
+          }
+        };
+        req.onerror = reject;
+      });
     }
 
     // Cuenta Corriente logic
@@ -632,7 +671,11 @@ async function procesarVenta() {
 function limpiarVenta() {
   itemsVentaCorriente = [];
   document.getElementById("venta-search").value = "";
+  const cantInput = document.getElementById("venta-cantidad");
+  if (cantInput) cantInput.value = "1";
+  document.getElementById("venta-descripcion").value = "";
   document.getElementById("venta-metodoPago").value = "efectivo";
+  document.getElementById("venta-cliente").value = "";
   toggleClienteSelect();
   renderVentaItems();
 }
@@ -779,12 +822,11 @@ async function registrarPagoCC() {
 // ===== HISTORIAL (REPORTES) =====
 async function loadHistorial() {
   const section = document.getElementById("lista-historial");
-  if (!section) return; // if reportes tab not ready yet
+  if (!section) return;
 
   section.innerHTML = '<p class="text-center">Cargando...</p>';
   try {
     const ventas = await dbGetAll("ventas");
-    // Ordenar por más recientes
     ventas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     section.innerHTML = "";
@@ -793,6 +835,14 @@ async function loadHistorial() {
         '<p class="text-center text-muted">No hay historial de ventas.</p>';
       return;
     }
+
+    // Badge de método de pago
+    const metodoBadge = (m) => {
+      if (m === 'efectivo') return '<span class="badge bg-success">Efectivo</span>';
+      if (m === 'tarjeta') return '<span class="badge bg-info text-dark">Tarjeta</span>';
+      if (m === 'cuenta corriente') return '<span class="badge bg-warning text-dark">Cta. Cte.</span>';
+      return `<span class="badge bg-secondary">${m}</span>`;
+    };
 
     ventas.forEach((v) => {
       const f = new Date(v.fecha);
@@ -804,25 +854,45 @@ async function loadHistorial() {
       const item = document.createElement("div");
       item.className = "mobile-list-item";
 
-      let htmlItems = ``;
+      // Tabla de productos de la venta
+      let htmlItems = "";
       if (v.items && v.items.length) {
-        htmlItems = `<ul class="small text-muted mt-2 ps-3 mb-0">`;
+        htmlItems = `<table class="w-100 mt-2" style="font-size: 0.8rem; color: #555;">
+          <tbody>`;
         v.items.forEach((i) => {
-          htmlItems += `<li>${i.cantidad}x ${i.producto_nombre}</li>`;
+          htmlItems += `<tr>
+            <td>${i.cantidad}x ${i.producto_nombre}</td>
+            <td class="text-end">$${parseFloat(i.precio_unitario).toFixed(2)} c/u</td>
+            <td class="text-end fw-bold">$${parseFloat(i.subtotal).toFixed(2)}</td>
+          </tr>`;
         });
-        htmlItems += `</ul>`;
+        htmlItems += `</tbody></table>`;
       }
 
+      // Línea de cliente
+      const clienteHtml = v.cliente_nombre
+        ? `<span class="me-2">👤 ${v.cliente_nombre}</span>`
+        : "";
+
+      // Descripción
+      const descripcionHtml = v.descripcion
+        ? `<div class="text-muted mt-1" style="font-size: 0.8rem;">📝 ${v.descripcion}</div>`
+        : "";
+
       item.innerHTML = `
-                <div class="mobile-list-info w-100">
-                    <div class="d-flex justify-content-between">
-                        <h6 class="mobile-list-title">Venta #${v.id}</h6>
-                        <span class="mobile-list-value text-success">$${parseFloat(v.total).toFixed(2)}</span>
-                    </div>
-                    <p class="mobile-list-subtitle mb-1">${fechaStr} | ${v.metodo_pago}</p>
-                    ${htmlItems}
-                </div>
-            `;
+        <div class="mobile-list-info w-100">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h6 class="mobile-list-title mb-0">Venta #${v.id}</h6>
+              <small class="text-muted">${fechaStr}</small>
+            </div>
+            <span class="mobile-list-value text-success fs-6 fw-bold">$${parseFloat(v.total).toFixed(2)}</span>
+          </div>
+          <div class="mt-1">${metodoBadge(v.metodo_pago)} ${clienteHtml}</div>
+          ${descripcionHtml}
+          ${htmlItems}
+        </div>
+      `;
       section.appendChild(item);
     });
   } catch (e) {
