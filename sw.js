@@ -1,5 +1,5 @@
-const CACHE_NAME = 'tienda-pwa-v2';
-const DYNAMIC_CACHE = 'tienda-dynamic-v2';
+const CACHE_NAME = 'tienda-pwa-v3';
+const DYNAMIC_CACHE = 'tienda-dynamic-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
