@@ -287,7 +287,6 @@
                   class="form-control"
                   value="0"
                 />
-              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -337,7 +336,6 @@
               <div class="mb-3">
                 <label>Teléfono</label>
                 <input type="text" id="cli-telefono" class="form-control" />
-              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -493,6 +491,33 @@
                   />
                   <span class="input-group-text bg-light">%</span>
                 </div>
+              <hr class="my-3" />
+
+              <h6 class="text-primary">💾 Copia de Seguridad</h6>
+              <div class="mb-3 text-center">
+                <button
+                  type="button"
+                  class="btn btn-outline-success w-100 mb-2"
+                  onclick="exportarDatosJSON()"
+                >
+                  ⬇️ Exportar Copia (Descargar)
+                </button>
+                <label
+                  for="input-restaurar"
+                  class="btn btn-outline-danger w-100 mb-0"
+                >
+                  ⬆️ Restaurar Copia (Subir .json)
+                </label>
+                <input
+                  type="file"
+                  id="input-restaurar"
+                  accept=".json"
+                  style="display: none;"
+                  onchange="importarDatosJSON(event)"
+                />
+                <small class="text-muted d-block mt-1" style="font-size: 0.7rem;">
+                  Nota: Restaurar reemplazará todos tus datos actuales.
+                </small>
               </div>
             </form>
           </div>

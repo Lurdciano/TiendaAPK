@@ -35,9 +35,9 @@ function registerServiceWorker() {
         reg.onupdatefound = () => {
           const installingWorker = reg.installing;
           installingWorker.onstatechange = () => {
-            if (installingWorker.state === 'installed') {
+            if (installingWorker.state === "installed") {
               if (navigator.serviceWorker.controller) {
-                console.log('Nueva versión disponible... recargando.');
+                console.log("Nueva versión disponible... recargando.");
                 location.reload();
               }
             }
@@ -45,10 +45,10 @@ function registerServiceWorker() {
         };
       })
       .catch((err) => console.log("SW Error", err));
-    
+
     // Forzar recarga si el controlador cambia (activación inmediata)
     let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (!refreshing) {
         window.location.reload();
         refreshing = true;
@@ -830,4 +830,103 @@ async function loadHistorial() {
     section.innerHTML =
       '<p class="text-danger text-center">Error al cargar historial.</p>';
   }
+}
+
+// ===== COPIA DE SEGURIDAD (BACKUP) =====
+async function exportarDatosJSON() {
+  try {
+    const bd = {
+      productos: await dbGetAll("productos"),
+      clientes: await dbGetAll("clientes"),
+      ventas: await dbGetAll("ventas"),
+      cuentas_corrientes: await dbGetAll("cuentas_corrientes"),
+      movimientos_cc: await dbGetAll("movimientos_cc"),
+      objetivo_mensual: await dbGetAll("objetivo_mensual"),
+      configuracion: await dbGetAll("configuracion"),
+    };
+
+    const dataStr =
+      "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bd));
+    const element = document.createElement("a");
+    element.setAttribute("href", dataStr);
+    element.setAttribute(
+      "download",
+      `tiendapp_backup_${new Date().toISOString().split("T")[0]}.json`,
+    );
+    document.body.appendChild(element);
+    element.click();
+    element.remove();
+
+    bootstrap.Modal.getInstance(document.getElementById("modalConfig")).hide();
+  } catch (e) {
+    console.error("Error al exportar la base de datos", e);
+    alert("Hubo un error al generar la copia de seguridad.");
+  }
+}
+
+async function importarDatosJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (
+    !confirm(
+      "⚠️ ¡ADVERTENCIA! Esto borrará TODOS los datos actuales y los reemplazará por los del archivo. ¿Deseas continuar?",
+    )
+  ) {
+    event.target.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async function (e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.productos || !data.clientes || !data.ventas) {
+        throw new Error("El archivo no tiene el formato correcto.");
+      }
+
+      const stores = [
+        "productos",
+        "clientes",
+        "ventas",
+        "cuentas_corrientes",
+        "movimientos_cc",
+        "objetivo_mensual",
+        "configuracion",
+      ];
+
+      for (let storeName of stores) {
+        if (data[storeName]) {
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction([storeName], "readwrite");
+            const req = tx.objectStore(storeName).clear();
+            req.onsuccess = resolve;
+            req.onerror = reject;
+          });
+
+          if (data[storeName].length > 0) {
+            const txInsert = db.transaction([storeName], "readwrite");
+            const storeInsert = txInsert.objectStore(storeName);
+            for (let item of data[storeName]) {
+              storeInsert.put(item);
+            }
+            await new Promise((resolve, reject) => {
+              txInsert.oncomplete = resolve;
+              txInsert.onerror = reject;
+            });
+          }
+        }
+      }
+
+      alert(
+        "✅ Restauración completada con éxito. La aplicación se reiniciará.",
+      );
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert("Error al restaurar los datos: " + error.message);
+    }
+    event.target.value = "";
+  };
+  reader.readAsText(file);
 }
