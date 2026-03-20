@@ -284,6 +284,7 @@ async function loadDashboard() {
   try {
     const productos = await dbGetAll("productos");
     const ventas = await dbGetAll("ventas");
+    const movimientos = await dbGetAll("movimientos_cc");
 
     document.getElementById("dash-productos-total").textContent =
       productos.length;
@@ -292,11 +293,19 @@ async function loadDashboard() {
     ).length;
 
     const hoy = new Date().toISOString().split("T")[0];
-    let ventasHoy = ventas.filter((v) => v.fecha.startsWith(hoy));
+    // Ventas en efectivo/tarjeta/CC de hoy
+    const ventasHoy = ventas.filter((v) => v.fecha.startsWith(hoy));
+    // Abonos de CC recibidos hoy (dinero que efectivamente entró en caja)
+    const abonosHoy = movimientos.filter(
+      (m) => m.tipo === "abono" && m.fecha.startsWith(hoy)
+    );
 
-    let totalVentas = ventasHoy.reduce((acc, v) => acc + v.total, 0);
+    const totalVentas = ventasHoy.reduce((acc, v) => acc + v.total, 0);
+    const totalAbonos = abonosHoy.reduce((acc, m) => acc + m.monto, 0);
+    const totalHoy = totalVentas + totalAbonos;
+
     document.getElementById("dash-ventas-hoy").textContent =
-      `$${totalVentas.toFixed(2)}`;
+      `$${totalHoy.toFixed(2)}`;
 
     // Objetivo Mensual
     const dhoy = new Date();
@@ -534,17 +543,15 @@ function quitarItemVenta(id) {
 
 function renderVentaItems() {
   const container = document.getElementById("venta-items-container");
-  const msg = document.getElementById("empty-venta-msg");
 
   if (itemsVentaCorriente.length === 0) {
-    container.innerHTML = "";
-    container.appendChild(msg);
-    msg.style.display = "block";
+    // Recreamos el mensaje para evitar el bug de elemento removido del DOM
+    container.innerHTML =
+      '<p class="text-muted text-center" id="empty-venta-msg">No hay productos en la venta.</p>';
     document.getElementById("venta-total-monto").textContent = "$0.00";
     return;
   }
 
-  msg.style.display = "none";
   let html = "";
   let total = 0;
 
@@ -576,10 +583,22 @@ async function procesarVenta() {
   const metodo = document.getElementById("venta-metodoPago").value;
   const clienteIdStr = document.getElementById("venta-cliente").value;
   const descripcion = document.getElementById("venta-descripcion").value.trim();
-  const total = itemsVentaCorriente.reduce(
+
+  // Subtotal base (suma de items con precio efectivo)
+  const subtotalBase = itemsVentaCorriente.reduce(
     (acc, curr) => acc + curr.subtotal,
     0,
   );
+
+  // Aplicar recargo de tarjeta si corresponde
+  let total = subtotalBase;
+  let recargoAplicado = 0;
+  if (metodo === "tarjeta") {
+    const confRecargo = await dbGet("configuracion", "recargo_tarjeta");
+    const pctRecargo = confRecargo ? confRecargo.valor : 0;
+    recargoAplicado = subtotalBase * (pctRecargo / 100);
+    total = subtotalBase + recargoAplicado;
+  }
 
   let cliente_id = null;
   let cliente_nombre = "";
@@ -601,7 +620,8 @@ async function procesarVenta() {
     cliente_nombre: cliente_nombre,
     metodo_pago: metodo,
     descripcion: descripcion,
-    subtotal: total,
+    subtotal: subtotalBase,
+    recargo: recargoAplicado,
     total: total,
     items: itemsVentaCorriente,
   };
@@ -866,6 +886,13 @@ async function loadHistorial() {
             <td class="text-end fw-bold">$${parseFloat(i.subtotal).toFixed(2)}</td>
           </tr>`;
         });
+        // Mostrar recargo de tarjeta si existio
+        if (v.recargo && v.recargo > 0) {
+          htmlItems += `<tr class="text-warning">
+            <td colspan="2">Recargo Tarjeta</td>
+            <td class="text-end">+$${parseFloat(v.recargo).toFixed(2)}</td>
+          </tr>`;
+        }
         htmlItems += `</tbody></table>`;
       }
 
