@@ -1,187 +1,522 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mi Tienda PWA</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Tiendapp PWA</title>
     <!-- PWA Meta tags -->
-    <meta name="theme-color" content="#0d6efd">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./assets/icon-192x192.png">
-    <link rel="icon" href="./favicon.ico" type="image/x-icon">
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom Mobile CSS -->
-    <link rel="stylesheet" href="./static/css/styles.css">
-</head>
-<body>
+    <meta name="theme-color" content="#0d6efd" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="./assets/icon-192x192.png" />
+    <link rel="icon" href="./favicon.ico" type="image/x-icon" />
 
+    <!-- Bootstrap 5 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Custom Mobile CSS -->
+    <link rel="stylesheet" href="./static/css/styles.css" />
+  </head>
+  <body>
     <!-- Offline Alert -->
     <div id="offline-alert" class="offline-alert bg-warning text-dark">
-        Desconectado. Grabando en memoria (Offline).
+      Desconectado. Grabando en memoria (Offline).
     </div>
 
     <!-- Top Navbar -->
     <header class="top-navbar">
-        <div class="brand-container d-flex align-items-center">
-            <img src="./assets/logo.png" alt="Logo" style="height: 40px; margin-right: 10px; border-radius: 8px;">
-            <h1 class="brand" style="font-size: 1.1rem; margin: 0;">Divina Luki</h1>
-        </div>
-        <div id="sync-status" style="font-size: 0.8rem;">🟢 Online</div>
+      <div class="brand-container d-flex align-items-center">
+        <img
+          src="./assets/logo.png"
+          alt="Logo"
+          style="height: 40px; margin-right: 10px; border-radius: 8px"
+        />
+        <h1 class="brand" style="font-size: 1.1rem; margin: 0">Tiendapp</h1>
+      </div>
+      <div class="d-flex align-items-center">
+        <span id="sync-status" style="font-size: 0.8rem; margin-right: 10px"
+          >🟢 Local</span
+        >
+        <button class="nav-action-btn" onclick="abrirModalConfig()">⚙️</button>
+      </div>
     </header>
 
     <!-- CONTENT SECTIONS (SPA) -->
 
     <!-- Dashboard -->
     <main id="dashboard" class="app-section active">
-        <div class="stat-card">
-            <div class="stat-icon">📈</div>
-            <div class="stat-info">
-                <p class="stat-label">Ventas Hoy</p>
-                <p class="stat-value" id="dash-ventas-hoy">$0</p>
-            </div>
+      <div class="stat-card">
+        <div class="stat-icon">📈</div>
+        <div class="stat-info">
+          <p class="stat-label">Ventas Hoy</p>
+          <p class="stat-value" id="dash-ventas-hoy">$0</p>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon">📦</div>
-            <div class="stat-info">
-                <p class="stat-label">Productos Activos</p>
-                <p class="stat-value" id="dash-productos-total">0</p>
-            </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-info">
+          <p class="stat-label">Productos Activos</p>
+          <p class="stat-value" id="dash-productos-total">0</p>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon">⚠️</div>
-            <div class="stat-info">
-                <p class="stat-label">Stock Bajo</p>
-                <p class="stat-value text-danger" id="dash-stock-bajo">0</p>
-            </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-info">
+          <p class="stat-label">Stock Bajo</p>
+          <p class="stat-value text-danger" id="dash-stock-bajo">0</p>
         </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-info" style="width: 100%">
+          <p class="stat-label">Objetivo Mensual</p>
+          <div class="d-flex justify-content-between align-items-end">
+            <span
+              class="stat-value"
+              id="dash-objetivo-monto"
+              style="font-size: 1.2rem"
+              >$0</span
+            >
+            <span
+              id="dash-objetivo-pct"
+              class="text-primary fw-bold"
+              style="font-size: 0.9rem"
+              >0%</span
+            >
+          </div>
+          <div class="progress-container">
+            <div
+              id="dash-objetivo-barra"
+              class="progress-bar"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Productos -->
     <main id="productos" class="app-section">
-        <h3 class="mb-3">Inventario</h3>
-        <div class="mb-3">
-            <input type="text" id="buscar-producto" class="form-control" placeholder="Buscar producto...">
-        </div>
-        <div id="lista-productos">
-            <!-- Dynamic content -->
-            <p class="text-center text-muted">Cargando...</p>
-        </div>
-        <button class="fab" onclick="abrirModalProducto()">+</button>
+      <h3 class="mb-3">Inventario</h3>
+      <div class="mb-3">
+        <input
+          type="text"
+          id="buscar-producto"
+          class="form-control"
+          placeholder="Buscar producto..."
+        />
+      </div>
+      <div id="lista-productos">
+        <!-- Dynamic content -->
+        <p class="text-center text-muted">Cargando...</p>
+      </div>
     </main>
 
     <!-- Ventas -->
     <main id="ventas" class="app-section">
-        <h3 class="mb-3">Nueva Venta</h3>
-        <div class="form-section">
-            <div class="mb-3">
-                <label>Producto</label>
-                <input type="text" id="venta-search" class="form-control" placeholder="Buscar para agregar..." list="datalist-productos">
-                <datalist id="datalist-productos"></datalist>
-            </div>
-            
-            <div id="venta-items-container" class="mb-3">
-                <!-- Ventas agregadas -->
-                <p class="text-muted text-center" id="empty-venta-msg">No hay productos en la venta.</p>
-            </div>
-
-            <div class="d-flex justify-content-between mb-2 fs-5 fw-bold">
-                <span>Total:</span>
-                <span id="venta-total-monto">$0.00</span>
-            </div>
-
-            <div class="mb-3">
-                <label>Método Pago</label>
-                <select id="venta-metodoPago" class="form-control">
-                    <option value="efectivo">Efectivo</option>
-                    <option value="tarjeta">Tarjeta</option>
-                    <option value="cuenta corriente">Cuenta Corriente</option>
-                </select>
-            </div>
-            <button class="btn btn-success btn-mobile-full" onclick="procesarVenta()">Confirmar Venta</button>
+      <h3 class="mb-3">Nueva Venta</h3>
+      <div class="form-section">
+        <div class="mb-3">
+          <label>Producto</label>
+          <input
+            type="text"
+            id="venta-search"
+            class="form-control"
+            placeholder="Buscar para agregar..."
+            list="datalist-productos"
+          />
+          <datalist id="datalist-productos"></datalist>
         </div>
+
+        <div id="venta-items-container" class="mb-3">
+          <!-- Ventas agregadas -->
+          <p class="text-muted text-center" id="empty-venta-msg">
+            No hay productos en la venta.
+          </p>
+        </div>
+
+        <div class="d-flex justify-content-between mb-2 fs-5 fw-bold">
+          <span>Total:</span>
+          <span id="venta-total-monto">$0.00</span>
+        </div>
+
+        <div class="mb-3">
+          <label>Método Pago</label>
+          <select
+            id="venta-metodoPago"
+            class="form-control"
+            onchange="toggleClienteSelect()"
+          >
+            <option value="efectivo">Efectivo</option>
+            <option value="tarjeta">Tarjeta</option>
+            <option value="cuenta corriente">Cuenta Corriente</option>
+          </select>
+        </div>
+        <div class="mb-3" id="venta-cliente-container" style="display: none">
+          <label>Cliente (Para Cuenta Corriente)</label>
+          <select id="venta-cliente" class="form-control">
+            <option value="">-- Seleccionar --</option>
+          </select>
+        </div>
+        <button
+          class="btn btn-success btn-mobile-full"
+          onclick="procesarVenta()"
+        >
+          Confirmar Venta
+        </button>
+      </div>
     </main>
 
     <!-- Clientes -->
     <main id="clientes" class="app-section">
-        <h3 class="mb-3">Clientes</h3>
-        <div id="lista-clientes">
-            <!-- Dynamic Content -->
-            <p class="text-center text-muted">Cargando...</p>
-        </div>
-        <button class="fab" onclick="abrirModalCliente()">+</button>
+      <h3 class="mb-3">Clientes</h3>
+      <div id="lista-clientes">
+        <!-- Dynamic Content -->
+        <p class="text-center text-muted">Cargando...</p>
+      </div>
     </main>
 
     <!-- Reportes -->
     <main id="reportes" class="app-section">
-        <h3 class="mb-3">Historial</h3>
-        <div id="lista-historial">
-            <!-- Dynamic Content -->
-        </div>
+      <h3 class="mb-3">Historial</h3>
+      <div id="lista-historial">
+        <!-- Dynamic Content -->
+      </div>
     </main>
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-        <button class="nav-item btn btn-link active" data-target="dashboard">
-            <span class="nav-icon">📊</span>
-            <span>Inicio</span>
-        </button>
-        <button class="nav-item btn btn-link" data-target="productos">
-            <span class="nav-icon">👗</span>
-            <span>Productos</span>
-        </button>
-        <button class="nav-item btn btn-link" data-target="ventas">
-            <span class="nav-icon">💰</span>
-            <span>Vender</span>
-        </button>
-        <button class="nav-item btn btn-link" data-target="clientes">
-            <span class="nav-icon">👥</span>
-            <span>Clientes</span>
-        </button>
-        <button class="nav-item btn btn-link" data-target="reportes">
-            <span class="nav-icon">📝</span>
-            <span>Reportes</span>
-        </button>
+      <button class="nav-item btn btn-link active" data-target="dashboard">
+        <span class="nav-icon">📊</span>
+        <span>Inicio</span>
+      </button>
+      <button class="nav-item btn btn-link" data-target="productos">
+        <span class="nav-icon">👗</span>
+        <span>Productos</span>
+      </button>
+      <button class="nav-item btn btn-link" data-target="ventas">
+        <span class="nav-icon">💰</span>
+        <span>Vender</span>
+      </button>
+      <button class="nav-item btn btn-link" data-target="clientes">
+        <span class="nav-icon">👥</span>
+        <span>Clientes</span>
+      </button>
+      <button class="nav-item btn btn-link" data-target="reportes">
+        <span class="nav-icon">📝</span>
+        <span>Reportes</span>
+      </button>
     </nav>
+
+    <!-- Floating Action Buttons (Fixed Position) -->
+    <button
+      id="fab-productos"
+      class="fab"
+      onclick="abrirModalProducto()"
+      style="display: none"
+    >
+      +
+    </button>
+    <button
+      id="fab-clientes"
+      class="fab"
+      onclick="abrirModalCliente()"
+      style="display: none"
+    >
+      +
+    </button>
 
     <!-- Modals -->
     <!-- Modal Producto -->
     <div class="modal fade" id="modalProducto" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Nuevo Producto</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="formProducto">
-                        <input type="hidden" id="prod-id">
-                        <div class="mb-3">
-                            <label>Nombre *</label>
-                            <input type="text" id="prod-nombre" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Stock</label>
-                            <input type="number" id="prod-stock" class="form-control" value="0">
-                        </div>
-                        <div class="mb-3">
-                            <label>Precio Efectivo</label>
-                            <input type="number" id="prod-precio" class="form-control" value="0">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="guardarProducto()">Guardar</button>
-                </div>
-            </div>
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Nuevo Producto</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="formProducto">
+              <input type="hidden" id="prod-id" />
+              <div class="mb-3">
+                <label>Nombre *</label>
+                <input
+                  type="text"
+                  id="prod-nombre"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label>Stock</label>
+                <input
+                  type="number"
+                  id="prod-stock"
+                  class="form-control"
+                  value="0"
+                />
+              </div>
+              <div class="mb-3">
+                <label>Costo ($)</label>
+                <input
+                  type="number"
+                  id="prod-costo"
+                  class="form-control"
+                  value="0"
+                  oninput="calcularPrecioSugerido()"
+                />
+              </div>
+              <div class="mb-3">
+                <label>Precio Efectivo</label>
+                <input
+                  type="number"
+                  id="prod-precio"
+                  class="form-control"
+                  value="0"
+                />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="guardarProducto()"
+            >
+              Guardar
+            </button>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Modal Cliente -->
+    <div class="modal fade" id="modalCliente" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Nuevo Cliente</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="formCliente">
+              <input type="hidden" id="cli-id" />
+              <div class="mb-3">
+                <label>Nombre *</label>
+                <input
+                  type="text"
+                  id="cli-nombre"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label>Teléfono</label>
+                <input type="text" id="cli-telefono" class="form-control" />
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="guardarCliente()"
+            >
+              Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Detalle Cliente (Cuenta Corriente) -->
+    <div class="modal fade" id="modalDetalleCliente" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header bg-light">
+            <h5 class="modal-title" id="det-cli-nombre">Nombre Cliente</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="text-center mb-4">
+              <p class="text-muted mb-1">Saldo Pendiente (Cuenta Corriente)</p>
+              <h2 id="det-cli-saldo" class="text-danger fw-bold">$0.00</h2>
+              <button
+                class="btn btn-sm btn-outline-success mt-2"
+                onclick="mostrarFormPago()"
+              >
+                <span class="fs-5">💵</span> Registrar Pago
+              </button>
+            </div>
+
+            <div
+              id="form-pago-cc"
+              class="mb-4"
+              style="
+                display: none;
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                border: 1px solid #dee2e6;
+              "
+            >
+              <h6>Nuevo Abono</h6>
+              <div class="input-group mb-2">
+                <span class="input-group-text">$</span>
+                <input
+                  type="number"
+                  id="cc-monto-pago"
+                  class="form-control"
+                  placeholder="Monto"
+                />
+              </div>
+              <div class="d-flex gap-2">
+                <button
+                  class="btn btn-sm btn-secondary flex-grow-1"
+                  onclick="
+                    document.getElementById('form-pago-cc').style.display =
+                      'none'
+                  "
+                >
+                  Cancelar
+                </button>
+                <button
+                  class="btn btn-sm btn-success flex-grow-1"
+                  onclick="registrarPagoCC()"
+                >
+                  Confirmar Abono
+                </button>
+              </div>
+            </div>
+
+            <h6>Historial de Movimientos</h6>
+            <div id="lista-movimientos-cc" style="font-size: 0.9rem">
+              <!-- JS Dinamico -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Configuración -->
+    <div class="modal fade" id="modalConfig" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">⚙️ Configuración</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="formConfig">
+              <h6 class="text-primary mt-2">📊 Objetivo Mensual</h6>
+              <div class="mb-3">
+                <label class="form-label text-muted small mb-1"
+                  >Meta de ventas ($)</label
+                >
+                <div class="input-group">
+                  <span class="input-group-text bg-light">$</span>
+                  <input
+                    type="number"
+                    id="cfg-objetivo"
+                    class="form-control"
+                    value="0"
+                  />
+                </div>
+              </div>
+
+              <hr class="my-3" />
+
+              <h6 class="text-primary">💲 Márgenes Sugeridos</h6>
+              <div class="mb-3">
+                <label class="form-label text-muted small mb-1"
+                  >Markup Efectivo (%)</label
+                >
+                <div class="input-group">
+                  <input
+                    type="number"
+                    id="cfg-markup"
+                    class="form-control"
+                    value="30"
+                  />
+                  <span class="input-group-text bg-light">%</span>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label text-muted small mb-1"
+                  >Recargo Tarjeta (%)</label
+                >
+                <div class="input-group">
+                  <input
+                    type="number"
+                    id="cfg-recargo"
+                    class="form-control"
+                    value="10"
+                  />
+                  <span class="input-group-text bg-light">%</span>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer bg-light">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary px-4"
+              onclick="guardarConfig()"
+            >
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="./static/js/app.js"></script>
-</body>
+  </body>
 </html>

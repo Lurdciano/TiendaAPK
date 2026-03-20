@@ -1,6 +1,6 @@
 {
-  "name": "Divina Luki - Gestión",
-  "short_name": "Divina Luki",
+  "name": "Tiendapp - Gestión",
+  "short_name": "Tiendapp",
   "description": "Sistema de Gestión de Tienda de Ropa - PWA Offline",
   "start_url": "./index.html",
   "display": "standalone",
