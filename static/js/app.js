@@ -17,11 +17,9 @@ const offlineAlert = document.getElementById("offline-alert");
 function updateOnlineStatus() {
   isOnline = navigator.onLine;
   if (isOnline) {
-    syncStatus.textContent = "🟢 Online (Modo Local)";
-    if (offlineAlert) offlineAlert.style.display = "none";
+    syncStatus.textContent = "🟢 Local (Con Red)";
   } else {
-    syncStatus.textContent = "🔴 Offline (Modo Local)";
-    if (offlineAlert) offlineAlert.style.display = "block";
+    syncStatus.textContent = "🔴 Local (Sin Red)";
   }
 }
 window.addEventListener("online", updateOnlineStatus);
