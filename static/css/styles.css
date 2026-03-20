@@ -1,0 +1,224 @@
+:root {
+  --primary-color: #0d6efd;
+  --bg-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --text-main: #212529;
+  --text-muted: #6c757d;
+  --border-color: #dee2e6;
+  --nav-height: 60px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  padding-bottom: calc(var(--nav-height) + 20px);
+  padding-top: var(--nav-height);
+}
+
+.offline-alert {
+  display: none;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1050;
+  border-radius: 0;
+  text-align: center;
+  font-weight: 500;
+  padding: 8px;
+}
+
+/* Mobile Top Navbar */
+.top-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  background: var(--primary-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.top-navbar .brand {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.75rem;
+  padding: 8px;
+  transition: all 0.2s ease;
+}
+
+.bottom-nav .nav-item.active {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.bottom-nav .nav-icon {
+  font-size: 1.5rem;
+  margin-bottom: 2px;
+}
+
+/* Sections */
+.app-section {
+  display: none;
+  animation: fadeIn 0.3s ease;
+  padding: 15px;
+}
+
+.app-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Dashboard Cards */
+.stat-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  border-left: 4px solid var(--primary-color);
+}
+
+.stat-icon {
+  font-size: 2rem;
+  margin-right: 15px;
+  width: 50px;
+  text-align: center;
+}
+
+.stat-info .stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.stat-info .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-main);
+}
+
+/* Lists / Tables */
+.mobile-list-item {
+  background: white;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-list-info {
+  flex: 1;
+}
+
+.mobile-list-title {
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.mobile-list-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.mobile-list-value {
+  font-weight: 700;
+  color: var(--primary-color);
+  text-align: right;
+}
+
+/* Form Styles */
+.form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-bottom: 15px;
+}
+
+.btn-mobile-full {
+  width: 100%;
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* Floating Action Button */
+.fab {
+  position: fixed;
+  bottom: calc(var(--nav-height) + 15px);
+  right: 15px;
+  width: 56px;
+  height: 56px;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.4);
+  z-index: 100;
+  text-decoration: none;
+  transition: transform 0.2s;
+}
+
+.fab:active {
+  transform: scale(0.95);
+}
+
+/* Venta Item */
+.venta-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.venta-item-row:last-child {
+  border-bottom: none;
+}

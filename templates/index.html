@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mi Tienda PWA</title>
+    <!-- PWA Meta tags -->
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="{{ url_for('static', filename='../manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='../assets/icon-192x192.png') }}">
+    <link rel="icon" href="{{ url_for('static', filename='../favicon.ico') }}" type="image/x-icon">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom Mobile CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <!-- Offline Alert -->
+    <div id="offline-alert" class="offline-alert bg-warning text-dark">
+        Desconectado. Grabando en memoria (Offline).
+    </div>
+
+    <!-- Top Navbar -->
+    <header class="top-navbar">
+        <div class="brand-container d-flex align-items-center">
+            <img src="{{ url_for('static', filename='../assets/logo.png') }}" alt="Logo" style="height: 40px; margin-right: 10px; border-radius: 8px;">
+            <h1 class="brand" style="font-size: 1.1rem; margin: 0;">Divina Luki</h1>
+        </div>
+        <div id="sync-status" style="font-size: 0.8rem;">🟢 Online</div>
+    </header>
+
+    <!-- CONTENT SECTIONS (SPA) -->
+
+    <!-- Dashboard -->
+    <main id="dashboard" class="app-section active">
+        <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-info">
+                <p class="stat-label">Ventas Hoy</p>
+                <p class="stat-value" id="dash-ventas-hoy">$0</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-info">
+                <p class="stat-label">Productos Activos</p>
+                <p class="stat-value" id="dash-productos-total">0</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-info">
+                <p class="stat-label">Stock Bajo</p>
+                <p class="stat-value text-danger" id="dash-stock-bajo">0</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Productos -->
+    <main id="productos" class="app-section">
+        <h3 class="mb-3">Inventario</h3>
+        <div class="mb-3">
+            <input type="text" id="buscar-producto" class="form-control" placeholder="Buscar producto...">
+        </div>
+        <div id="lista-productos">
+            <!-- Dynamic content -->
+            <p class="text-center text-muted">Cargando...</p>
+        </div>
+        <button class="fab" onclick="abrirModalProducto()">+</button>
+    </main>
+
+    <!-- Ventas -->
+    <main id="ventas" class="app-section">
+        <h3 class="mb-3">Nueva Venta</h3>
+        <div class="form-section">
+            <div class="mb-3">
+                <label>Producto</label>
+                <input type="text" id="venta-search" class="form-control" placeholder="Buscar para agregar..." list="datalist-productos">
+                <datalist id="datalist-productos"></datalist>
+            </div>
+            
+            <div id="venta-items-container" class="mb-3">
+                <!-- Ventas agregadas -->
+                <p class="text-muted text-center" id="empty-venta-msg">No hay productos en la venta.</p>
+            </div>
+
+            <div class="d-flex justify-content-between mb-2 fs-5 fw-bold">
+                <span>Total:</span>
+                <span id="venta-total-monto">$0.00</span>
+            </div>
+
+            <div class="mb-3">
+                <label>Método Pago</label>
+                <select id="venta-metodoPago" class="form-control">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="cuenta corriente">Cuenta Corriente</option>
+                </select>
+            </div>
+            <button class="btn btn-success btn-mobile-full" onclick="procesarVenta()">Confirmar Venta</button>
+        </div>
+    </main>
+
+    <!-- Clientes -->
+    <main id="clientes" class="app-section">
+        <h3 class="mb-3">Clientes</h3>
+        <div id="lista-clientes">
+            <!-- Dynamic Content -->
+            <p class="text-center text-muted">Cargando...</p>
+        </div>
+        <button class="fab" onclick="abrirModalCliente()">+</button>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item btn btn-link active" data-target="dashboard">
+            <span class="nav-icon">📊</span>
+            <span>Inicio</span>
+        </button>
+        <button class="nav-item btn btn-link" data-target="productos">
+            <span class="nav-icon">👗</span>
+            <span>Productos</span>
+        </button>
+        <button class="nav-item btn btn-link" data-target="ventas">
+            <span class="nav-icon">💰</span>
+            <span>Vender</span>
+        </button>
+        <button class="nav-item btn btn-link" data-target="clientes">
+            <span class="nav-icon">👥</span>
+            <span>Clientes</span>
+        </button>
+        <button class="nav-item btn btn-link" data-target="reportes">
+            <span class="nav-icon">📝</span>
+            <span>Reportes</span>
+        </button>
+    </nav>
+
+    <!-- Modals -->
+    <div class="modal fade" id="modalProducto" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nuevo Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formProducto">
+                        <input type="hidden" id="prod-id">
+                        <div class="mb-3">
+                            <label>Nombre *</label>
+                            <input type="text" id="prod-nombre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Stock</label>
+                            <input type="number" id="prod-stock" class="form-control" value="0">
+                        </div>
+                        <div class="mb-3">
+                            <label>Precio Efectivo</label>
+                            <input type="number" id="prod-precio" class="form-control" value="0">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarProducto()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
